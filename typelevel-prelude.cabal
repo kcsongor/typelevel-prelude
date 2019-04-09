@@ -14,7 +14,7 @@ build-type:          Simple
 extra-source-files:  CHANGELOG.md
 
 library
-  -- exposed-modules:
+  exposed-modules:     Type.Prelude
   -- other-modules:
   other-extensions:    UnsaturatedTypeFamilies
   build-depends:       base ^>=4.13.0.0
