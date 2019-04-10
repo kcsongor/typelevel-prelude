@@ -26,6 +26,11 @@ type family (.) (f :: b ->{m} c) (g :: a ->{n} b) (x :: a) :: c where
 
 infixr 9 .
 
+type family ($) (f :: a ->{m} b)  (x :: a) :: b where
+  f $ x = f x
+
+infixr 0 $
+
 --------------------------------------------------------------------------------
 -- * Classes
 
