@@ -1,3 +1,5 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE TypeInType #-}
 {-# LANGUAGE UnsaturatedTypeFamilies #-}
@@ -9,6 +11,7 @@ module Type.Prelude where
 
 import Data.Kind (Type, Constraint)
 import Data.Maybe
+import GHC.TypeLits
 
 --------------------------------------------------------------------------------
 -- * Standard
@@ -48,6 +51,12 @@ instance Semigroup Constraint where
 
 instance Monoid Constraint where
   type Mempty @Constraint = ()
+
+instance Semigroup Symbol where
+  type (<>) a b = AppendSymbol a b
+
+instance Monoid Symbol where
+  type Mempty = ""
 
 class Functor f where
   type Fmap (fun :: a ->{m} b) (fa :: f a) :: f b
@@ -122,3 +131,41 @@ type family Gmap (f :: b ->{m} r) (st :: a) :: [r] where
 -- '[ '[1, 2, 3], '[2, 3], '[3], '[]]
 type family Listify k (st :: a) :: [k] where
   Listify k st = Gmap (Id @k) st
+
+--------------------------------------------------------------------------------
+-- * Lenses
+
+type Lens s t a b = forall m (f :: * ->{m} *). (a ~> f b) ~> (s ~> f t)
+
+newtype Constant a b = MkConstant a
+
+instance Functor (Constant a) where
+  type Fmap _ ('MkConstant c) = 'MkConstant c
+
+type family UnConstant (c :: Constant b a) :: b where
+  UnConstant ('MkConstant a) = a
+
+type family View (l :: (a ->{m} Constant a a) ~> (s ->{n} Constant a s)) (t :: s) :: a where
+  View lens s = UnConstant (lens 'MkConstant s)
+
+newtype Identity a = MkIdentity a
+
+type family UnIdentity (c :: Identity a) :: a where
+  UnIdentity ('MkIdentity a) = a
+
+instance Functor Identity where
+  type Fmap f ('MkIdentity a) = 'MkIdentity (f a)
+
+type family Update l f st where
+  Update lens f s = UnIdentity (lens $ MkIdentity . f) s
+
+data Person = MkPerson Symbol Nat Address
+data Address = MkAddress Symbol Nat
+
+type Joe = 'MkPerson "Joe" 32 ('MkAddress "Elm Street" 13)
+
+type family AddressL f t where
+  AddressL f ('MkPerson name age address) = 'MkPerson name age <$> f address
+
+type family HouseL f t where
+  HouseL f ('MkAddress street house) = 'MkAddress street <$> f house
