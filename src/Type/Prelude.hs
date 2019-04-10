@@ -67,3 +67,11 @@ type family FoldMap (f :: a ->{m} b) (as :: [a]) :: b where
 
 type family All :: (k ->{m} Constraint) ~> [k] ~> Constraint where
   All = FoldMap
+
+--------------------------------------------------------------------------------
+-- * Scrap your boilerplate
+
+type family Everywhere (f :: b ->{m} b) (st :: a) :: a where
+  Everywhere f st = f st
+  Everywhere f (st x) = Everywhere f st (Everywhere f x)
+  Everywhere f st = st
