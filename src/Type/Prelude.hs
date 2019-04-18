@@ -6,6 +6,7 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE GADTs #-}
 
 module Type.Prelude where
 
@@ -132,6 +133,14 @@ type family Gmap (f :: b ->{m} r) (st :: a) :: [r] where
 type family Listify k (st :: a) :: [k] where
   Listify k st = Gmap (Id @k) st
 
+data Bool
+data Int
+data ConstT a b
+
+type family Barbie (a :: *) :: * -> * where
+  Barbie Bool = Identity
+  Barbie a = ConstT a
+
 --------------------------------------------------------------------------------
 -- * Lenses
 
@@ -169,3 +178,16 @@ type family AddressL f t where
 
 type family HouseL f t where
   HouseL f ('MkAddress street house) = 'MkAddress street <$> f house
+
+data Vector k n where
+  VNil :: Vector k 0
+  (:>) :: k -> Vector k n -> Vector k (n + 1)
+infixr 5 :>
+
+data HListF (f :: k ->{m} Type) (xs :: Vector k n) where
+  HNil ::                       HListF f  'VNil
+  (:&) :: f x -> HListF f xs -> HListF f (x ':> xs)
+
+infixr 5 :&
+
+type HList = HListF Id
