@@ -11,6 +11,7 @@
 module Type.Prelude where
 
 import Data.Kind (Type, Constraint)
+import Prelude (Bool(..))
 import Data.Maybe
 import GHC.TypeLits
 
@@ -35,6 +36,16 @@ type family ($) (f :: a ->{m} b)  (x :: a) :: b where
   f $ x = f x
 
 infixr 0 $
+
+type family CatMaybes (xs :: [Maybe k]) :: [k] where
+  CatMaybes '[]             = '[]
+  CatMaybes ('Just a ': as) = a ': CatMaybes as
+  CatMaybes (_ ': as)       = CatMaybes as
+
+type family Elem (x :: a) (xs :: [a]) :: Bool where
+  Elem x '[] = 'False
+  Elem x (x ': _) = 'True
+  Elem x (_ ': xs) = Elem x xs
 
 --------------------------------------------------------------------------------
 -- * Classes
@@ -85,9 +96,12 @@ type family (++) (as :: [k]) (bs :: [k]) :: [k] where
 
 infixr 5 ++
 
-type family Foldl (f :: b ->{m} a ->{m} b) (z :: b) (xs :: [a]) :: b where
+type family Foldl (f :: b ->{m} a ->{n} b) (z :: b) (xs :: [a]) :: b where
   Foldl f z '[] = z
   Foldl f z (x ': xs) = Foldl f (f z x) xs
+
+type family Foldl1 (f :: a ->{m} a ->{n} a) (xs :: [a]) :: a where
+  Foldl1 f (x ': xs) = Foldl f x xs
 
 --------------------------------------------------------------------------------  
 -- * Misc
@@ -116,10 +130,17 @@ type family Everywhere (f :: b ->{m} b) (st :: a) :: a where
 
 -- | Collect all subterms 
 type family Gmap (f :: b ->{m} r) (st :: a) :: [r] where
-  Gmap f (st x) = f (st x) ': Gmap f st ++ Gmap f x
-  Gmap f (st x) = Gmap f st ++ Gmap f x
-  Gmap f st   = '[f st]
-  Gmap f st   = '[]
+  Gmap f st = GmapMaybe ('Just . f) st
+
+type family GmapMaybe (f :: b ->{m} Maybe r) (st :: a) :: [r] where
+  GmapMaybe f (st x) = MCons (f (st x)) (GmapMaybe f st) ++ GmapMaybe f x
+  GmapMaybe f (st x) = GmapMaybe f st ++ GmapMaybe f x
+  GmapMaybe f st   = MCons (f st) '[]
+  GmapMaybe f st   = '[]
+
+type family MCons (x :: Maybe a) (xs :: [a]) :: [a] where
+  MCons 'Nothing xs = xs
+  MCons ('Just x) xs = x ': xs
 
 -- | Return all the types of kind 'k' from some structure.
 --
@@ -132,14 +153,6 @@ type family Gmap (f :: b ->{m} r) (st :: a) :: [r] where
 -- '[ '[1, 2, 3], '[2, 3], '[3], '[]]
 type family Listify k (st :: a) :: [k] where
   Listify k st = Gmap (Id @k) st
-
-data Bool
-data Int
-data ConstT a b
-
-type family Barbie (a :: *) :: * -> * where
-  Barbie Bool = Identity
-  Barbie a = ConstT a
 
 --------------------------------------------------------------------------------
 -- * Lenses
