@@ -1,7 +1,31 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 
-module Type.Prelude where
+module Type.Prelude
+  ( Fst, Snd
+  , Id, Const, Flip, type (.), type ($), S
+  , CatMaybes, Elem
+  , Ord(..), Semigroup(..), Monoid(..)
+  , Functor(..), Applicative(..), Monad(..) , type (>>)
+  , Alternative(..)
+  , Return
+  , Map, type (++), Foldl, Foldl1, FoldMap, All, Everywhere
+  , Gmap, GmapMaybe, MCons, Listify
+  , Lens
+  , Constant(..), UnConstant
+  , View
+  , Identity(..), RunIdentity
+  , Update
+  , Vector(..)
+  , HListF(..)
+  , HList
+  , Bool(..)
+  , Maybe(..)
+  , If
+  ) where
 
+import Data.Type.Bool
+import Data.Type.Equality
+import Data.Ord (Ordering(..))
 import Data.Kind (Type, Constraint)
 import Prelude (Bool(..))
 import Data.Maybe
@@ -51,6 +75,12 @@ type family Elem (x :: a) (xs :: [a]) :: Bool where
 
 --------------------------------------------------------------------------------
 -- * Classes
+
+class Ord a where
+  type Compare (x :: a) (y :: a) :: Ordering
+
+instance Ord Symbol where
+  type Compare x y = CmpSymbol x y
 
 class Semigroup (s :: Type) where
   type (<>) (a :: s) (b :: s) :: s
@@ -217,25 +247,25 @@ type family View (l :: (a ->{m} Constant a a) ~> (s ->{n} Constant a s)) (t :: s
 
 newtype Identity a = MkIdentity a
 
-type family UnIdentity (c :: Identity a) :: a where
-  UnIdentity ('MkIdentity a) = a
+type family RunIdentity (c :: Identity a) :: a where
+  RunIdentity ('MkIdentity a) = a
 
 instance Functor Identity where
   type Fmap f ('MkIdentity a) = 'MkIdentity (f a)
 
 type family Update l f st where
-  Update lens f s = UnIdentity (lens $ MkIdentity . f) s
+  Update lens f s = RunIdentity (lens $ MkIdentity . f) s
 
-data Person = MkPerson Symbol Nat Address
-data Address = MkAddress Symbol Nat
-
-type Joe = 'MkPerson "Joe" 32 ('MkAddress "Elm Street" 13)
-
-type family AddressL f t where
-  AddressL f ('MkPerson name age address) = 'MkPerson name age <$> f address
-
-type family HouseL f t where
-  HouseL f ('MkAddress street house) = 'MkAddress street <$> f house
+-- data Person = MkPerson Symbol Nat Address
+-- data Address = MkAddress Symbol Nat
+-- 
+-- type Joe = 'MkPerson "Joe" 32 ('MkAddress "Elm Street" 13)
+-- 
+-- type family AddressL f t where
+--   AddressL f ('MkPerson name age address) = 'MkPerson name age <$> f address
+-- 
+-- type family HouseL f t where
+--   HouseL f ('MkAddress street house) = 'MkAddress street <$> f house
 
 data Vector k n where
   VNil :: Vector k 0
