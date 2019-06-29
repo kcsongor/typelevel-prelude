@@ -1,12 +1,4 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE TypeInType #-}
-{-# LANGUAGE UnsaturatedTypeFamilies #-}
-{-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE GADTs #-}
 
 module Type.Prelude where
 
@@ -17,6 +9,12 @@ import GHC.TypeLits
 
 --------------------------------------------------------------------------------
 -- * Standard
+
+type family Fst (p :: (a, b)) :: a where
+  Fst '(x, _) = x
+
+type family Snd (p :: (a, b)) :: b where
+  Snd '(_, y) = y
 
 type family Id (a :: k) :: k where
   Id a = a
@@ -36,6 +34,10 @@ type family ($) (f :: a ->{m} b)  (x :: a) :: b where
   f $ x = f x
 
 infixr 0 $
+
+-- | S combinator
+type family S (f :: r ->{m} a ->{m} b) (x :: r ->{m} a) (s :: r) where
+  S f x r = f r (x r)
 
 type family CatMaybes (xs :: [Maybe k]) :: [k] where
   CatMaybes '[]             = '[]
@@ -84,15 +86,46 @@ infixl 4 <$>
 instance Functor [] where
   type Fmap f xs = Map f xs
 
+instance Functor ((,) a) where
+  type Fmap f '(x, y) = '(x, f y)
+
+instance Functor Maybe where
+  type Fmap f 'Nothing = 'Nothing
+  type Fmap f ('Just x) = 'Just (f x)
+
 class Applicative f where
   type (<*>) (fab :: f (a ->{n} b)) (fa :: f a) :: f b
   type (<*>) fab fa = fab >>= Flip (<$>) fa
   type Pure (v :: a) :: f a
 
+instance Applicative Maybe where
+  type Pure x = 'Just x
+  type 'Nothing <*> _ = 'Nothing
+  type 'Just _ <*> 'Nothing = 'Nothing
+  type 'Just f <*> 'Just x = 'Just (f x)
+
+instance Monoid a => Applicative ((,) a) where
+  type instance Pure x = '(Mempty, x)
+  type instance '(s1, f) <*> '(s2, x) = '(s1 <> s2, f x)
+
+class Applicative m => Alternative m where
+  type family Empty :: m a
+  type family (<|>) (x1 :: m a) (x2 :: m a) :: m a
+
+instance Alternative Maybe where
+  type instance Empty = 'Nothing
+  type instance 'Nothing <|> 'Nothing = 'Nothing
+  type instance ('Just x) <|> _ = 'Just x
+  type instance 'Nothing <|> 'Just x = 'Just x
+
 class Applicative m => Monad (m :: Type -> Type) where
   type (>>=) (ma :: m a) (amb :: a ->{n} m b) :: m b
 
 type Return = Pure
+
+instance Monad Maybe where
+  type 'Nothing >>= _ = 'Nothing
+  type 'Just x >>= f = f x
 
 type (>>) ma f = ma >>= (Const f)
 

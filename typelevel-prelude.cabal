@@ -14,13 +14,23 @@ build-type:          Simple
 extra-source-files:  CHANGELOG.md
 
 library
-  exposed-modules:     Type.Prelude
+  exposed-modules:     Type.Prelude,
+                       Type.Control.Monad.Reader,
+                       Type.Control.Monad.State
   -- other-modules:
-  other-extensions:    UnsaturatedTypeFamilies
+  other-extensions:
   build-depends:       base ^>=4.13.0.0
   hs-source-dirs:      src
   default-language:    Haskell2010
-  default-extensions:  NoImplicitPrelude
-                    ,  UndecidableInstances
-                    ,  TypeOperators
-                    ,  PolyKinds
+  default-extensions:  DataKinds,
+                       GADTs,
+                       NoImplicitPrelude,
+                       PolyKinds,
+                       RankNTypes,
+                       TupleSections,
+                       TypeApplications,
+                       TypeFamilies,
+                       TypeInType,
+                       TypeOperators,
+                       UndecidableInstances,
+                       UnsaturatedTypeFamilies
