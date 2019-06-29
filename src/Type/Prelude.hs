@@ -5,7 +5,7 @@ module Type.Prelude
   , Id, Const, Flip, type (.), type ($), S
   , CatMaybes, Elem
   , Ord(..), Semigroup(..), Monoid(..)
-  , Functor(..), Applicative(..), Monad(..) , type (>>)
+  , Functor(..), type (<$>), Applicative(..), Monad(..) , type (>>)
   , Alternative(..)
   , Return
   , Map, type (++), Foldl, Foldl1, FoldMap, All, Everywhere
