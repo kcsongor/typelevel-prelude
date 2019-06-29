@@ -21,6 +21,7 @@ module Type.Prelude
   , Bool(..)
   , Maybe(..)
   , If
+  , type (==)
   ) where
 
 import Data.Type.Bool
@@ -127,6 +128,7 @@ class Applicative f where
   type (<*>) (fab :: f (a ->{n} b)) (fa :: f a) :: f b
   type (<*>) fab fa = fab >>= Flip (<$>) fa
   type Pure (v :: a) :: f a
+infixl 4 <*>
 
 instance Applicative Maybe where
   type Pure x = 'Just x
