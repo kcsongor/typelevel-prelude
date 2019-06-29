@@ -85,10 +85,12 @@ instance Functor [] where
   type Fmap f xs = Map f xs
 
 class Applicative f where
+  type (<*>) (fab :: f (a ->{n} b)) (fa :: f a) :: f b
+  type (<*>) fab fa = fab >>= Flip (<$>) fa
   type Pure (v :: a) :: f a
 
 class Applicative m => Monad (m :: Type -> Type) where
-  type (>>=) (ma :: m a) (amb :: a ~> m b) :: m b
+  type (>>=) (ma :: m a) (amb :: a ->{n} m b) :: m b
 
 type Return = Pure
 
