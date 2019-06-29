@@ -84,6 +84,16 @@ infixl 4 <$>
 instance Functor [] where
   type Fmap f xs = Map f xs
 
+class Applicative f where
+  type Pure (v :: a) :: f a
+
+class Applicative m => Monad (m :: Type -> Type) where
+  type (>>=) (ma :: m a) (amb :: a ~> m b) :: m b
+
+type Return = Pure
+
+type (>>) ma f = ma >>= (Const f)
+
 --------------------------------------------------------------------------------
 -- * Lists
 type family Map (f :: a ->{m} b) (as :: [a]) :: [b] where
