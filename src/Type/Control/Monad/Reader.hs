@@ -17,7 +17,7 @@ instance Applicative (Reader r) where
   type instance Pure x = 'MkReader (Const x)
   type instance 'MkReader f <*> 'MkReader x = 'MkReader (S f x)
 
-type family ReaderBindImpl (m :: r ~> a) (k :: a -> Reader r b) (s :: r) where
+type family ReaderBindImpl (m :: r ~> a) (k :: a ~> Reader r b) (s :: r) where
   ReaderBindImpl m k s = RunReader (k (m s)) s
 
 instance Monad (Reader r) where

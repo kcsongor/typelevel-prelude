@@ -22,6 +22,7 @@ module Type.Prelude
   , Maybe(..)
   , If
   , type (==)
+  , Apply
   ) where
 
 import Data.Type.Bool
@@ -35,6 +36,9 @@ import GHC.TypeLits
 --------------------------------------------------------------------------------
 -- * Standard
 
+type family Apply (f :: a -> b) (x :: a) :: b where
+  Apply f x = f x
+
 type family Fst (p :: (a, b)) :: a where
   Fst '(x, _) = x
 
@@ -47,21 +51,21 @@ type family Id (a :: k) :: k where
 type family Const (a :: k) (b :: j) :: k where
   Const a b = a
 
-type family Flip (f :: j ->{m} k ->{n} l) (a :: k) (b :: j)  :: l where
+type family Flip (f :: j ~> k ~> l) (a :: k) (b :: j)  :: l where
   Flip f a b = f b a
 
-type family (.) (f :: b ->{m} c) (g :: a ->{n} b) (x :: a) :: c where
+type family (.) (f :: b ~> c) (g :: a ~> b) (x :: a) :: c where
   (f . g) x = f (g x)
 
 infixr 9 .
 
-type family ($) (f :: a ->{m} b)  (x :: a) :: b where
+type family ($) (f :: a ~> b)  (x :: a) :: b where
   f $ x = f x
 
 infixr 0 $
 
 -- | S combinator
-type family S (f :: r ->{m} a ->{m} b) (x :: r ->{m} a) (s :: r) where
+type family S (f :: r ~> a ~> b) (x :: r ~> a) (s :: r) where
   S f x r = f r (x r)
 
 type family CatMaybes (xs :: [Maybe k]) :: [k] where
@@ -104,14 +108,14 @@ instance Monoid Symbol where
   type Mempty = ""
 
 class Functor f where
-  type Fmap (fun :: a ->{m} b) (fa :: f a) :: f b
+  type Fmap (fun :: a ~> b) (fa :: f a) :: f b
 
 -- | Infix version of 'Fmap'
 --
 -- >>> :kind! ((+) 1) <$> '[1,2,3]
 -- '[1,2,3]
 --
-type (<$>) = (Fmap :: (a ->{m} b) ~> f a ~> f b)
+type (<$>) = (Fmap :: (a ~> b) ~> f a ~> f b)
 infixl 4 <$>
 
 instance Functor [] where
@@ -125,7 +129,7 @@ instance Functor Maybe where
   type Fmap f ('Just x) = 'Just (f x)
 
 class Applicative f where
-  type (<*>) (fab :: f (a ->{n} b)) (fa :: f a) :: f b
+  type (<*>) (fab :: f (a ~> b)) (fa :: f a) :: f b
   type (<*>) fab fa = fab >>= Flip (<$>) fa
   type Pure (v :: a) :: f a
 infixl 4 <*>
@@ -151,7 +155,7 @@ instance Alternative Maybe where
   type instance 'Nothing <|> 'Just x = 'Just x
 
 class Applicative m => Monad (m :: Type -> Type) where
-  type (>>=) (ma :: m a) (amb :: a ->{n} m b) :: m b
+  type (>>=) (ma :: m a) (amb :: a ~> m b) :: m b
 
 type Return = Pure
 
@@ -207,7 +211,7 @@ type family Everywhere (f :: b ->{m} b) (st :: a) :: a where
 
 -- | Collect all subterms 
 type family Gmap (f :: b ->{m} r) (st :: a) :: [r] where
-  Gmap f st = GmapMaybe ('Just . f) st
+  Gmap f st = GmapMaybe (Apply 'Just . f) st
 
 type family GmapMaybe (f :: b ->{m} Maybe r) (st :: a) :: [r] where
   GmapMaybe f (st x) = MCons (f (st x)) (GmapMaybe f st) ++ GmapMaybe f x
@@ -256,7 +260,7 @@ instance Functor Identity where
   type Fmap f ('MkIdentity a) = 'MkIdentity (f a)
 
 type family Update l f st where
-  Update lens f s = RunIdentity (lens $ MkIdentity . f) s
+  Update lens f s = RunIdentity (lens $ Apply MkIdentity . f) s
 
 -- data Person = MkPerson Symbol Nat Address
 -- data Address = MkAddress Symbol Nat

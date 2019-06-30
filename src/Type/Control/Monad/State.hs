@@ -1,6 +1,9 @@
 module Type.Control.Monad.State
   ( State (..)
   , RunState
+  , PureState
+  , BindState
+  , BindState2
   ) where
 
 import Type.Prelude
@@ -13,14 +16,21 @@ type family RunState (st :: State s a) :: (s ~> (s, a)) where
 type family PureState a s where
   PureState a s = '(s, a)
 
-type family BindState (ma :: State s a) (amb :: a ~> State s b) (st :: s) :: (s, b) where
-  BindState ('MkState ma) f s = BindState' (ma s) (RunState . f)
+type family BindState2
+  (st :: (s, a))
+  (k :: a ~> State s b)
+  :: (s, b) where
+  BindState2 '(s, x) k = RunState (k x) s
 
-type family BindState' (st :: (s, a)) (f :: a ~> s ~> (s, b)) :: (s, b) where
-  BindState' '(s, a) f = f a s
+type family BindState
+  (st :: s ~> (s, a))
+  (f :: a ~> State s b)
+  (r :: s)
+  :: (s, b) where
+  BindState x k s = BindState2 (x s) k
 
 instance Applicative (State s) where
   type Pure a = 'MkState (PureState a)
 
 instance Monad (State s) where
-  type (>>=) ma amb = 'MkState (BindState ma amb)
+  type (>>=) ('MkState ma) amb = 'MkState (BindState ma amb)
