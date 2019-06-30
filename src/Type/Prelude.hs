@@ -128,6 +128,10 @@ instance Functor Maybe where
   type Fmap f 'Nothing = 'Nothing
   type Fmap f ('Just x) = 'Just (f x)
 
+type family MapMaybe (f :: a ~> b) (x :: Maybe a) :: Maybe b where
+  MapMaybe f ('Just x) = 'Just (f x)
+  MapMaybe f 'Nothing = 'Nothing
+
 class Applicative f where
   type (<*>) (fab :: f (a ~> b)) (fa :: f a) :: f b
   type (<*>) fab fa = fab >>= Flip (<$>) fa
