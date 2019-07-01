@@ -100,6 +100,18 @@ type family Elem (x :: a) (xs :: [a]) :: Bool where
 class Ord a where
   type Compare (x :: a) (y :: a) :: Ordering
 
+  type (<) (x :: a) (y :: a) :: Bool
+  type x < y = Compare x y == LT
+
+  type (>) (x :: a) (y :: a) :: Bool
+  type x > y = Compare x y == GT
+
+  type (<=) (x :: a) (y :: a) :: Bool
+  type x <= y = x == y || x < y
+
+  type (>=) (x :: a) (y :: a) :: Bool
+  type x >= y = x == y || x > y
+
 instance Ord Symbol where
   type Compare x y = CmpSymbol x y
 
