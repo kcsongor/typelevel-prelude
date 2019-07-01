@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
 module Type.Prelude
   ( Fst, Snd
@@ -143,6 +144,9 @@ instance Functor Maybe where
   type Fmap f 'Nothing = 'Nothing
   type Fmap f ('Just x) = 'Just (f x)
 
+instance Functor ((~>) r) where
+  type Fmap f g = f . g
+
 type family MapMaybe (f :: a ~> b) (x :: Maybe a) :: Maybe b where
   MapMaybe f ('Just x) = 'Just (f x)
   MapMaybe f 'Nothing = 'Nothing
@@ -152,6 +156,10 @@ class Applicative f where
   type (<*>) fab fa = fab >>= Flip (<$>) fa
   type Pure (v :: a) :: f a
 infixl 4 <*>
+
+instance Applicative ((~>) r) where
+  type Pure x = Const x
+  type f <*> g = S f g
 
 instance Applicative Maybe where
   type Pure x = 'Just x
@@ -184,6 +192,12 @@ type Return = Pure
 instance Monad Maybe where
   type 'Nothing >>= _ = 'Nothing
   type 'Just x >>= f = f x
+
+type family BindArrowImpl (f :: r ~> a) (k :: a ~> r ~> a) (x :: r) where
+  BindArrowImpl f k x = k (f x) x
+
+instance Monad ((~>) r) where
+  type f >>= k = BindArrowImpl f k
 
 --------------------------------------------------------------------------------
 -- * Lists
