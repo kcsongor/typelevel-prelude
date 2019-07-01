@@ -36,43 +36,54 @@ import GHC.TypeLits
 --------------------------------------------------------------------------------
 -- * Standard
 
+-- | Applies a type constructor to a type.
+-- Typically one writes @Apply F@ to lower @F@ from kind @a -> b@ to kind @a ~> b@.
 type family Apply (f :: a -> b) (x :: a) :: b where
   Apply f x = f x
 
+-- | Extracts the first component of a pair.
 type family Fst (p :: (a, b)) :: a where
   Fst '(x, _) = x
 
+-- | Extracts the second component of a pair.
 type family Snd (p :: (a, b)) :: b where
   Snd '(_, y) = y
 
+-- | Returns its input.
 type family Id (a :: k) :: k where
   Id a = a
 
+-- | Always returns its first input, ignoring its second input.
 type family Const (a :: k) (b :: j) :: k where
   Const a b = a
 
+-- | Flip the inputs of a 2-ary function.
 type family Flip (f :: j ~> k ~> l) (a :: k) (b :: j)  :: l where
   Flip f a b = f b a
 
+-- | Function composition.
 type family (.) (f :: b ~> c) (g :: a ~> b) (x :: a) :: c where
   (f . g) x = f (g x)
 
 infixr 9 .
 
+-- | Function application.
 type family ($) (f :: a ~> b)  (x :: a) :: b where
   f $ x = f x
 
 infixr 0 $
 
--- | S combinator
+-- | S combinator.
 type family S (f :: r ~> a ~> b) (x :: r ~> a) (s :: r) where
   S f x r = f r (x r)
 
+-- | Remove all @'Nothing@s from a list of 'Maybe'.
 type family CatMaybes (xs :: [Maybe k]) :: [k] where
   CatMaybes '[]             = '[]
   CatMaybes ('Just a ': as) = a ': CatMaybes as
   CatMaybes (_ ': as)       = CatMaybes as
 
+-- | Decides whether a given element is in a list.
 type family Elem (x :: a) (xs :: [a]) :: Bool where
   Elem x '[] = 'False
   Elem x (x ': _) = 'True
@@ -81,6 +92,10 @@ type family Elem (x :: a) (xs :: [a]) :: Bool where
 --------------------------------------------------------------------------------
 -- * Classes
 
+-- | Types that can be totally ordered.
+--
+-- Note that we don't define Eq since all types can be compared for
+-- equality.
 class Ord a where
   type Compare (x :: a) (y :: a) :: Ordering
 
@@ -161,13 +176,14 @@ instance Alternative Maybe where
 class Applicative m => Monad (m :: Type -> Type) where
   type (>>=) (ma :: m a) (amb :: a ~> m b) :: m b
 
+type (>>) ma f = ma >>= (Const f)
+
+-- | Convenient type synonym for people who can't get with the times.
 type Return = Pure
 
 instance Monad Maybe where
   type 'Nothing >>= _ = 'Nothing
   type 'Just x >>= f = f x
-
-type (>>) ma f = ma >>= (Const f)
 
 --------------------------------------------------------------------------------
 -- * Lists
