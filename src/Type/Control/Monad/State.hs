@@ -13,8 +13,14 @@ newtype State s a = MkState (s ~> (s, a))
 type family RunState (st :: State s a) :: (s ~> (s, a)) where
   RunState ('MkState s) = s
 
+instance Functor (State s) where
+  type Fmap f ('MkState sf) = 'MkState (Fmap f . sf)
+
 type family PureState a s where
   PureState a s = '(s, a)
+
+instance Applicative (State s) where
+  type Pure a = 'MkState (PureState a)
 
 type family BindState2
   (st :: (s, a))
@@ -28,9 +34,6 @@ type family BindState
   (r :: s)
   :: (s, b) where
   BindState x k s = BindState2 (x s) k
-
-instance Applicative (State s) where
-  type Pure a = 'MkState (PureState a)
 
 instance Monad (State s) where
   type (>>=) ('MkState ma) amb = 'MkState (BindState ma amb)
